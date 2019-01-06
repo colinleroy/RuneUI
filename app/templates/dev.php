@@ -271,6 +271,13 @@
 						<span class="help-block">This will reset the shairport-sync.conf file back to defaults and reinitialise Airplay</span>
 					</div>
 				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Reset Samba config</label>
+					<div class="col-sm-10">
+						<input class="btn btn-default btn-lg" type="submit" name="syscmd" value="sambaconfreset" id="syscmd-sambaconfreset" <?php if($this->dev !== '1'): ?> disabled <?php endif ?>>
+						<span class="help-block">This will reset the smb-prod.conf and smb-dev.conf files back to defaults, remove any Samba usernames/passwords and reinitialise Samba</span>
+					</div>
+				</div>
             </div>
             <div class="boxed-group">
 				<div class="form-group">
