@@ -71,7 +71,7 @@ redis-cli del spotify
 redis-cli del usbmounts
 redis-cli del debugdata
 redis-cli del local_browser
-redis-cli del snapserver
+redis-cli del webstreaming
 php -f /srv/http/db/redis_datastore_setup reset
 redis-cli set playerid ""
 redis-cli set hwplatformid ""

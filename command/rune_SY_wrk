@@ -404,13 +404,6 @@ if ($playerid_db === '') {
 		sysCmdAsync('systemctl stop local-browser');
 	}
 
-	// start snapserver
-	if (($redis->hGet('snapserver', 'enable')) && (file_exists('/usr/bin/snapserver'))) {
-		sysCmdAsync('systemctl start snapserver');
-	} else {
-		sysCmdAsync('systemctl stop snapserver');
-	}
-
 	// turn wifi power saving off
 	sysCmd('iwconfig wlan0 power off');
 
@@ -1008,17 +1001,15 @@ while (1) {
 					sysCmd('/srv/http/command/switch_'.$job->action.'_time_on.sh');
 					$redis->sRem('w_lock', $jobID);
 					break;
-                case 'snapserver':
+                case 'webstreaming':
                     runelog('wrk_SY: ', $job->wrkcmd);
-					runelog('snapserver action: ', $job->action);
-					runelog('snapserver args: ', $job->args);
+					runelog('webstreaming action: ', $job->action);
+					runelog('webstreaming args: ', $job->args);
                     $redis->sAdd('w_lock', $jobID);
 					if ($job->action === 'start') {
-						$redis->hSet('snapserver', 'enable', $job->args);
-						sysCmd('systemctl start snapserver');
+						$redis->hSet('webstreaming', 'enable', $job->args);
 					} else if ($job->action === 'stop') {
-						$redis->hSet('snapserver', 'enable', $job->args);
-						sysCmd('systemctl stop snapserver');
+						$redis->hSet('webstreaming', 'enable', $job->args);
 					}
 					wrk_mpdconf($redis, 'refresh');
 					$redis->sRem('w_lock', $jobID);
