@@ -1503,7 +1503,7 @@ function wrk_replaceTextLine($file, $inputArray, $strfind, $strrepl, $linelabel 
           if (preg_match('/'.$strfind.'/', $line)) {
             $line = $strrepl."\n";
             runelog('replaceall $line', $line);
-          }
+          };
         }
       $newArray[] = $line;
     }
@@ -2685,6 +2685,10 @@ if ($action === 'reset') {
             // runelog('conf output (in loop)', $output, __FUNCTION__);
             }
             $output .="\n";
+
+            if ($redis->hGet("snapserver", "enable") === "1") {
+		$output .= "audio_output {\n\ttype\t\"fifo\"\n\tname\t\"Snapserver\"\n\tpath\t\"/tmp/snapfifo\"\n\tformat\t\"48000:16:2\"\n\tmixer_type\t\"software\"\n\talways_on\t\"yes\"\n}\n";
+            }
             // debug
             // runelog('raw mpd.conf', $output, __FUNCTION__);
             // check if mpd.conf was modified outside RuneUI (advanced mode)
@@ -3914,6 +3918,8 @@ function wrk_switchplayer($redis, $playerengine)
 {
     switch ($playerengine) {
         case 'MPD':
+	    sysCmd('systemctl stop snapclient');
+	    usleep(250000);
 			$retval = sysCmd('systemctl is-active mpd');
 			if ($retval[0] === 'active') {
 				// do nothing
@@ -3932,12 +3938,12 @@ function wrk_switchplayer($redis, $playerengine)
             // set process priority
             sysCmdAsync('rune_prio nice');
             break;
-        
         case 'Spotify':
             $return = sysCmd('systemctl start spopd');
             usleep(500000);
             if ($redis->hGet('lastfm','enable') === '1') sysCmd('systemctl stop mpdscribble');
             if ($redis->hGet('dlna','enable') === '1') sysCmd('systemctl stop upmpdcli');
+	    sysCmd('systemctl stop snapclient');
 			sysCmd('systemctl stop ashuffle');
 			wrk_mpdPlaybackStatus($redis);
             $redis->set('activePlayer', 'Spotify');
@@ -3947,10 +3953,51 @@ function wrk_switchplayer($redis, $playerengine)
             // set process priority
             sysCmdAsync('rune_prio nice');
             break;
+	case 'Snapcast':
+            sysCmd('systemctl stop snapclient');
+            wrk_configureSnapclient($redis);
+            sysCmd('systemctl start snapclient');
+            wrk_mpdPlaybackStatus($redis);
+            $redis->set('activePlayer', 'Snapcast');
+            $return = sysCmd('systemctl stop mpd');
+            $redis->set('mpd_playback_status', 'stop');
+            $return = sysCmd('curl -s -X GET http://localhost/command/?cmd=renderui');
+            // set process priority
+            sysCmdAsync('rune_prio nice');
+	    break;
+
     }
     return $return;
 }
 
+function wrk_configureSnapclient($redis)
+{
+        $file = '/etc/default/snapclient';
+        $ao = $redis->get("ao");
+        $acard = json_decode($redis->hGet("acards", $ao));
+        if (isset($acard->sysname)) {
+            $card_param="-s '".$acard->sysname."'";
+        } else if (isset($acard->system)) {
+            $acard_system = $acard->system;
+            runelog("acard ".$acard_system);
+            runelog("acard_system $acard_system");
+            $shortname = explode(':', $acard_system)[1];
+            runelog("shortname $shortname");
+            $shortname = trim(explode(' ', $shortname)[1]);
+            runelog("shortname now $shortname");
+            $card_param="-s '".$shortname."'";
+        } else {
+            $card_param="";
+        }
+        $newArray = wrk_replaceTextLine($file,
+            '',
+            'SNAPCLIENT_OPTS=',
+            'SNAPCLIENT_OPTS="-h '.$redis->get("snapcast_host").' '.$card_param.'"');
+        // Commit change
+        $fp = fopen($file, 'w');
+        fwrite($fp, implode("", $newArray));
+        fclose($fp);
+}
 function wrk_sysAcl()
 {
     sysCmd('chown -R http.http /srv/http/');
@@ -4293,7 +4340,7 @@ function ui_notify_async($title = null, $text, $type = null, $permanotice = null
     }
     $output = json_encode($output);
     runelog('notify (async) JSON string: ', $output);
-    sysCmdAsync('/var/www/command/ui_notify.php \''.$output);
+    sysCmdAsync('/var/www/command/ui_notify.php \''.$output.'\'');
 }
 
 function wrk_notify($redis, $action, $notification, $jobID = null)
@@ -4416,6 +4463,12 @@ function ui_libraryHome($redis, $clientUUID=null)
     // runelog('dirble: ',$dirble);
     // Spotify
     $spotify = $redis->hGet('spotify', 'enable');
+    //Snapcast
+    if (file_exists('/usr/bin/snapclient')) {
+        $snapcast = '1';
+    } else {
+        $snapcast = '';
+    }
     // Check current player backend
     $activePlayer = $redis->get('activePlayer');
     // Bookmarks
@@ -4430,7 +4483,7 @@ function ui_libraryHome($redis, $clientUUID=null)
     // runelog('bookmarks: ',$bookmarks);
     // $jsonHome = json_encode(array_merge($bookmarks, array(0 => array('networkMounts' => $networkmounts)), array(0 => array('USBMounts' => $usbmounts)), array(0 => array('webradio' => $webradios)), array(0 => array('Dirble' => $dirble->amount)), array(0 => array('ActivePlayer' => $activePlayer))));
     // $jsonHome = json_encode(array_merge($bookmarks, array(0 => array('networkMounts' => $networkmounts)), array(0 => array('USBMounts' => $usbmounts)), array(0 => array('webradio' => $webradios)), array(0 => array('Spotify' => $spotify)), array(0 => array('Dirble' => $dirble->amount)), array(0 => array('ActivePlayer' => $activePlayer))));
-    $jsonHome = json_encode(array('bookmarks' => $bookmarks, 'localStorages' => $localStorages, 'networkMounts' => $networkmounts, 'USBMounts' => $usbmounts, 'webradio' => $webradios, 'Spotify' => $spotify, 'Dirble' => $dirble->amount, 'ActivePlayer' => $activePlayer, 'clientUUID' => $clientUUID));
+    $jsonHome = json_encode(array('bookmarks' => $bookmarks, 'localStorages' => $localStorages, 'networkMounts' => $networkmounts, 'USBMounts' => $usbmounts, 'webradio' => $webradios, 'Spotify' => $spotify, 'Snapcast' => $snapcast, 'Dirble' => $dirble->amount, 'ActivePlayer' => $activePlayer, 'clientUUID' => $clientUUID));
     // Encode UI response
     runelog('libraryHome JSON: ', $jsonHome);
     ui_render('library', $jsonHome);
