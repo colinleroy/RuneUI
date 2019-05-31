@@ -4515,9 +4515,16 @@ function ui_libraryHome($redis, $clientUUID=null)
     // runelog('webradios: ',$webradios);
     // Dirble
     $proxy = $redis->hGetall('proxy');
-    $dirblecfg = $redis->hGetAll('dirble');
-    $dirble = json_decode(curlGet($dirblecfg['baseurl'].'amountStation/apikey/'.$dirblecfg['apikey'], $proxy));
-    // runelog('dirble: ',$dirble);
+    if($redis->get("enable_dirble") == 1) {
+        $dirblecfg = $redis->hGetAll('dirble');
+        $dirble = json_decode(curlGet($dirblecfg['baseurl'].'amountStation/apikey/'.$dirblecfg['apikey'], $proxy));
+        $dirble_amount = $dirble->amount;
+        // runelog('dirble: ',$dirble);
+	$dirble_obj="Dirble";
+    } else {
+        $dirble_amount = 0;
+	$dirble_obj="Dirble_disabled";
+    }
     // Spotify
     $spotify = $redis->hGet('spotify', 'enable');
     //Snapcast
@@ -4540,7 +4547,7 @@ function ui_libraryHome($redis, $clientUUID=null)
     // runelog('bookmarks: ',$bookmarks);
     // $jsonHome = json_encode(array_merge($bookmarks, array(0 => array('networkMounts' => $networkmounts)), array(0 => array('USBMounts' => $usbmounts)), array(0 => array('webradio' => $webradios)), array(0 => array('Dirble' => $dirble->amount)), array(0 => array('ActivePlayer' => $activePlayer))));
     // $jsonHome = json_encode(array_merge($bookmarks, array(0 => array('networkMounts' => $networkmounts)), array(0 => array('USBMounts' => $usbmounts)), array(0 => array('webradio' => $webradios)), array(0 => array('Spotify' => $spotify)), array(0 => array('Dirble' => $dirble->amount)), array(0 => array('ActivePlayer' => $activePlayer))));
-    $jsonHome = json_encode(array('bookmarks' => $bookmarks, 'localStorages' => $localStorages, 'networkMounts' => $networkmounts, 'USBMounts' => $usbmounts, 'webradio' => $webradios, 'Spotify' => $spotify, 'Snapcast' => $snapcast, 'Dirble' => $dirble->amount, 'ActivePlayer' => $activePlayer, 'clientUUID' => $clientUUID));
+    $jsonHome = json_encode(array('bookmarks' => $bookmarks, 'localStorages' => $localStorages, 'networkMounts' => $networkmounts, 'USBMounts' => $usbmounts, 'webradio' => $webradios, 'Spotify' => $spotify, 'Snapcast' => $snapcast, $dirble_obj => $dirble->amount, 'ActivePlayer' => $activePlayer, 'clientUUID' => $clientUUID));
     // Encode UI response
     runelog('libraryHome JSON: ', $jsonHome);
     ui_render('library', $jsonHome);
