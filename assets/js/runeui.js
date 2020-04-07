@@ -535,6 +535,7 @@ function renderLibraryHome() {
         toggleMPD = ' inactive';
     }
     // bookmarks blocks
+    if (chkKey(obj.bookmarks)) {
     for (i = 0; (bookmark = obj.bookmarks[i]); i += 1) {
         content += divOpen + '<div id="home-bookmark-' + bookmark.id + '" class="home-block home-bookmark' + toggleMPD + '" data-path="' + bookmark.path + '"><i class="fa fa-star"></i><h3>' + bookmark.name + '</h3>bookmark</div>' + divClose;
     }
@@ -561,6 +562,7 @@ function renderLibraryHome() {
                 content += divOpen + '<div id="home-nas" class="home-block' + toggleMPD + '" data-path="NAS"><i class="fa fa-sitemap"></i><h3>Network mounts (' + obj.networkMounts + ')</h3>network attached storages</div>' + divClose;
             }
 		}
+    }
     }
     if (chkKey(obj.localStorages)) {
     // local storages block
