@@ -2939,6 +2939,9 @@ if ($('#section-index').length) {
             }
         });
 
+        setTimeout(function() {
+		sendCmd("renderui");
+	}, 1000);
         // on screen keyboard
         if (document.location.hostname == "localhost")
             $('.osk-trigger').onScreenKeyboard({
