@@ -63,6 +63,9 @@ if (file_exists('/srv/http/command/update_os.php')) {
 // Set redis variable disk_error to false
 $redis->set('disk_error', 0);
 
+// Set redis programmed shutdown to false
+$redis->set('shutdown_end_queue', '0');
+
 // clean up Rern's addons security
 // Rern's addons menu
 if ($redis->hGet('addons', 'addo') != '') {
@@ -1199,6 +1202,19 @@ while (1) {
                     runelog('wrk_SY: ', $job->wrkcmd);
                     $redis->sAdd('w_lock', $jobID);
                     sysCmd('systemctl reload-or-restart php-fpm || systemctl start php-fpm');
+                    $redis->sRem('w_lock', $jobID);
+                    break;
+                case 'poweroff-end-queue':
+                    runelog('wrk_SY: ', $job->wrkcmd);
+                    $redis->sAdd('w_lock', $jobID);
+                    // send notify to UI
+                    if ($redis->get('shutdown_end_queue') === '1') {
+                        $redis->set('shutdown_end_queue', '0');
+                        ui_notify_async('Shutdown', 'Cancelled programmed shutdown', $jobID);
+                    } else {
+                        $redis->set('shutdown_end_queue', '1');
+                        ui_notify_async('Shutdown', 'Shutting down after end of queue', $jobID);
+                    }
                     $redis->sRem('w_lock', $jobID);
                     break;
                 case 'poweroff':

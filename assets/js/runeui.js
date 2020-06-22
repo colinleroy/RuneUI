@@ -2894,6 +2894,10 @@ if ($('#section-index').length) {
             $.post('/settings/', { 'syscmd' : 'poweroff' });
             toggleLoader();
         });
+        // system poweroff after end of queue
+        $('#syscmd-poweroff-end-queue').click(function(){
+            $.post('/settings/', { 'syscmd' : 'poweroff-end-queue' });
+        });
         // system reboot
         $('#syscmd-reboot').click(function(){
             $.post('/settings/', { 'syscmd' : 'reboot' });
