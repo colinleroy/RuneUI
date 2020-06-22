@@ -1,12 +1,23 @@
 <div id="poweroff-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="poweroff-modal-label" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                 <h4 class="modal-title" id="poweroff-modal-label">Turn off the player</h4>
             </div>
             <div class="modal-body txtmid">
-                <button id="syscmd-poweroff" name="syscmd" value="poweroff" class="btn btn-primary btn-lg btn-block" data-dismiss="modal"><i class="fa fa-power-off sx"></i> Power off</button>
+                <div class="btn-toolbar" style="display: flex">
+                    <button style="flex: 1" id="syscmd-poweroff" name="syscmd" value="poweroff" class="btn btn-primary btn-lg" data-dismiss="modal">
+                        <i class="fa fa-power-off sx"></i>
+                        Power off
+                        <br><small>now</small>
+                    </button>
+                    <button style="flex: 1" id="syscmd-poweroff-end-queue" name="syscmd" value="poweroff-end-queue" class="btn btn-primary btn-lg" data-dismiss="modal">
+                        <i class="fa fa-power-off sx"></i>
+                        Power off
+                        <br><small>after queue</small>
+                    </button>
+                </div>
                 &nbsp;
                 <button id="syscmd-reboot" name="syscmd" value="reboot" class="btn btn-primary btn-lg btn-block" data-dismiss="modal"><i class="fa fa-refresh sx"></i> Reboot</button>
 				<?php if (is_localhost()): ?>

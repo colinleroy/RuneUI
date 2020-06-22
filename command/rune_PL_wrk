@@ -151,6 +151,12 @@ while (1) {
 					}
 				}
 				
+                /* Programmed shutdown after last song of playlist */
+                if ($redis->get('nextsongid') === '' && $status['state'] === 'stop' && $redis->get('shutdown_end_queue') === '1') {
+                    runelog("Shutting down at end of queue");
+                    wrk_control($redis, 'newjob', $data = array('wrkcmd' => 'poweroff'));
+                }
+
 				// Global Random
 				if (($redis->get('globalrandom') === '1') && ($status['state'] === 'stop') && ($redis->get('lock_globalrandom') === '1')) {
 					// MPD now stopped, the last track was the last in the queue, ashuffle will start a new track in this status
@@ -299,4 +305,3 @@ while (1) {
 // --- WORKER MAIN LOOP --- //
 }
 // These command never get executed!!!
-
